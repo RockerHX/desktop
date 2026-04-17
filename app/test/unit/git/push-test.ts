@@ -158,7 +158,9 @@ describe('git/push', () => {
       commitMessage: 'first commit',
     })
 
-    const firstCommit = (await exec(['rev-parse', 'HEAD'], repo.path)).stdout.trim()
+    const firstCommit = (
+      await exec(['rev-parse', 'HEAD'], repo.path)
+    ).stdout.trim()
 
     await makeCommit(repo, {
       entries: [{ path: 'file-2.txt', contents: 'second' }],
@@ -187,7 +189,9 @@ describe('git/push', () => {
       commitMessage: 'first commit',
     })
 
-    const firstCommit = (await exec(['rev-parse', 'HEAD'], repo.path)).stdout.trim()
+    const firstCommit = (
+      await exec(['rev-parse', 'HEAD'], repo.path)
+    ).stdout.trim()
 
     await makeCommit(repo, {
       entries: [{ path: 'file-2.txt', contents: 'second' }],
