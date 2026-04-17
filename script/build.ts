@@ -59,6 +59,8 @@ const isPublishableBuild = isPublishable()
 const isNonProductionRelease = getChannel() !== 'production'
 const isDevelopmentBuild = getChannel() === 'development'
 const shouldSkipPackaging = process.env.DESKTOP_SKIP_PACKAGE === '1'
+const hasMacCodeSigningCredentials =
+  !!process.env.APPLE_APPLICATION_CERT && !!process.env.KEY_PASSWORD
 
 const projectRoot = path.join(__dirname, '..')
 const entitlementsSuffix = isDevelopmentBuild ? '-dev' : ''
@@ -85,9 +87,22 @@ generateLicenseMetadata(outRoot)
 
 moveAnalysisFiles()
 
-if (isGitHubActions() && process.platform === 'darwin' && isPublishableBuild) {
+if (
+  isGitHubActions() &&
+  process.platform === 'darwin' &&
+  isPublishableBuild &&
+  hasMacCodeSigningCredentials
+) {
   console.log('Setting up keychain…')
   cp.execSync(path.join(__dirname, 'setup-macos-keychain'))
+} else if (
+  isGitHubActions() &&
+  process.platform === 'darwin' &&
+  isPublishableBuild
+) {
+  console.log(
+    'Skipping macOS keychain setup because Apple signing credentials are unavailable.'
+  )
 }
 
 verifyInjectedSassVariables(outRoot)
@@ -158,11 +173,14 @@ function packageApp() {
 
   // get notarization deets, unless we're not going to publish this
   const osxNotarize = isPublishableBuild ? getNotarizationOptions() : undefined
+  const shouldSignMacApp =
+    process.platform !== 'darwin' || isDevelopmentBuild || hasMacCodeSigningCredentials
 
   if (
     isPublishableBuild &&
     isGitHubActions() &&
     process.platform === 'darwin' &&
+    hasMacCodeSigningCredentials &&
     osxNotarize === undefined
   ) {
     // we can't publish a mac build without these
@@ -203,20 +221,22 @@ function packageApp() {
     appBundleId: getBundleID(),
     appCategoryType: 'public.app-category.developer-tools',
     darwinDarkModeSupport: true,
-    osxSign: {
-      optionsForFile: (path: string) => ({
-        hardenedRuntime: true,
-        entitlements: entitlementsPath,
-      }),
-      type: isPublishableBuild ? 'distribution' : 'development',
-      // For development, we will use '-' as the identifier so that codesign
-      // will sign the app to run locally. We need to disable 'identity-validation'
-      // or otherwise it will replace '-' with one of the regular codesigning
-      // identities in our system.
-      identity: isDevelopmentBuild ? '-' : undefined,
-      identityValidation: !isDevelopmentBuild,
-    },
-    osxNotarize,
+    osxSign: shouldSignMacApp
+      ? {
+          optionsForFile: (path: string) => ({
+            hardenedRuntime: true,
+            entitlements: entitlementsPath,
+          }),
+          type: isPublishableBuild ? 'distribution' : 'development',
+          // For development, we will use '-' as the identifier so that codesign
+          // will sign the app to run locally. We need to disable 'identity-validation'
+          // or otherwise it will replace '-' with one of the regular codesigning
+          // identities in our system.
+          identity: isDevelopmentBuild ? '-' : undefined,
+          identityValidation: !isDevelopmentBuild,
+        }
+      : undefined,
+    osxNotarize: shouldSignMacApp ? osxNotarize : undefined,
     protocols: [
       {
         name: getBundleID(),
