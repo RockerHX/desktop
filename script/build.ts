@@ -59,8 +59,11 @@ const isPublishableBuild = isPublishable()
 const isNonProductionRelease = getChannel() !== 'production'
 const isDevelopmentBuild = getChannel() === 'development'
 const shouldSkipPackaging = process.env.DESKTOP_SKIP_PACKAGE === '1'
+const isSigningEnabled = process.env.DESKTOP_ENABLE_SIGNING !== 'false'
 const hasMacCodeSigningCredentials =
-  !!process.env.APPLE_APPLICATION_CERT && !!process.env.KEY_PASSWORD
+  isSigningEnabled &&
+  !!process.env.APPLE_APPLICATION_CERT &&
+  !!process.env.KEY_PASSWORD
 
 const projectRoot = path.join(__dirname, '..')
 const entitlementsSuffix = isDevelopmentBuild ? '-dev' : ''
@@ -98,7 +101,8 @@ if (
 } else if (
   isGitHubActions() &&
   process.platform === 'darwin' &&
-  isPublishableBuild
+  isPublishableBuild &&
+  isSigningEnabled
 ) {
   console.log(
     'Skipping macOS keychain setup because Apple signing credentials are unavailable.'
@@ -174,7 +178,9 @@ function packageApp() {
   // get notarization deets, unless we're not going to publish this
   const osxNotarize = isPublishableBuild ? getNotarizationOptions() : undefined
   const shouldSignMacApp =
-    process.platform !== 'darwin' || isDevelopmentBuild || hasMacCodeSigningCredentials
+    process.platform !== 'darwin' ||
+    isDevelopmentBuild ||
+    hasMacCodeSigningCredentials
 
   if (
     isPublishableBuild &&

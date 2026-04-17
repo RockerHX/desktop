@@ -28,6 +28,7 @@ import { assertNonNullable } from '../app/src/lib/fatal-error'
 const distPath = getDistPath()
 const productName = getProductName()
 const outputDir = getDistRoot()
+const isSigningEnabled = process.env.DESKTOP_ENABLE_SIGNING !== 'false'
 
 const assertExistsSync = (path: string) => {
   if (!existsSync(path)) {
@@ -105,7 +106,7 @@ function packageWindows() {
     options.remoteReleases = url.toString()
   }
 
-  if (isGitHubActions() && isPublishable()) {
+  if (isSigningEnabled && isGitHubActions() && isPublishable()) {
     assertNonNullable(process.env.RUNNER_TEMP, 'Missing RUNNER_TEMP env var')
 
     const acsPath = join(process.env.RUNNER_TEMP, 'acs')
