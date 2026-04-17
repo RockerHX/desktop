@@ -203,12 +203,9 @@ describe('git/push', () => {
 
     await assert.rejects(pushRefspec(repo, remote, `${firstCommit}:master`))
 
-    await pushRefspec(
-      repo,
-      remote,
-      `${firstCommit}:master`,
-      { forceWithLease: true }
-    )
+    await pushRefspec(repo, remote, `${firstCommit}:master`, {
+      forceWithLease: true,
+    })
 
     const result = await exec(['rev-parse', 'master'], barePath)
     assert.equal(result.stdout.trim(), firstCommit)

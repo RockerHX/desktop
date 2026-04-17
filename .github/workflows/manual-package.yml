@@ -53,7 +53,8 @@ jobs:
         run: yarn build:prod
 
       - name: Archive Linux build
-        run: tar -C dist -czf dist/GitHubDesktop-linux-x64.tar.gz desktop-linux-x64
+        run:
+          tar -C dist -czf dist/GitHubDesktop-linux-x64.tar.gz desktop-linux-x64
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
