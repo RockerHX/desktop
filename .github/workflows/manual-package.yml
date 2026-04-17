@@ -17,6 +17,10 @@ on:
           - production
           - test
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   package-macos-and-windows:
     name: Package macOS and Windows
@@ -28,39 +32,3 @@ jobs:
       environment: ${{ inputs.environment }}
       sign: false
     secrets: inherit
-
-  package-linux:
-    name: Package Linux x64
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    env:
-      RELEASE_CHANNEL: ${{ inputs.environment }}
-      TARGET_ARCH: x64
-      npm_config_arch: x64
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref || github.ref }}
-          submodules: recursive
-
-      - uses: ./.github/actions/setup-ci-environment
-        with:
-          node-version: 24.11.1
-          arch: x64
-
-      - name: Build production app
-        run: yarn build:prod
-
-      - name: Archive Linux build
-        run:
-          tar -C dist -czf dist/GitHubDesktop-linux-x64.tar.gz desktop-linux-x64
-
-      - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Linux-x64
-          path: |
-            dist/GitHubDesktop-linux-x64.tar.gz
-            dist/bundle-size.json
-          if-no-files-found: error
